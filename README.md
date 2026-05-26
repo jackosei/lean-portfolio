@@ -20,24 +20,34 @@ Single-file portfolio website built with vanilla HTML/CSS/JS. Features project c
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-name
+git clone https://github.com/jackosei/lean-portfolio.git
+cd lean-portfolio
 ```
 
 ### 2. Set your PIN
 
-Open `portfolio.html` in a text editor and find this line near the top of the `<script>` block:
+Your PIN is stored as a SHA-256 hash — the real number never appears in the code.
 
-```js
-const EDIT_PIN = '123456';
+**Step 1** — Hash your chosen 6-digit PIN:
+
+```bash
+# Mac / Linux
+echo -n "YOUR_PIN" | sha256sum
+
+# Or use the online tool:
+# https://emn178.github.io/online-tools/sha256.html
 ```
 
-Replace `123456` with your preferred 6-digit code and save.
+**Step 2** — Open `index.html` and paste the resulting hash:
+
+```js
+const EDIT_PIN_HASH = 'paste_your_hash_here';
+```
 
 ### 3. Open in your browser
 
 ```bash
-open portfolio.html
+open index.html
 ```
 
 Or just double-click the file — no server required.
@@ -70,7 +80,7 @@ Since it's a single static file, it works on any static host:
 ## Project Structure
 
 ```
-portfolio.html   ← everything: markup, styles, and logic in one file
+index.html   ← everything: markup, styles, and logic in one file
 README.md
 ```
 
@@ -83,7 +93,7 @@ README.md
 | Your name | The `eyebrow` heading in the `<header>` |
 | Bio text | Click bio while in edit mode, or edit the default string in `<script>` |
 | Accent colors | CSS variables `--web-accent`, `--wp-accent`, `--ui-accent` |
-| PIN | `const EDIT_PIN = '...'` in `<script>` |
+| PIN | Hash your PIN via `sha256sum`, paste into `const EDIT_PIN_HASH` |
 | Thumbnail size | Adjust the `thum.io` URL parameters in `thumbUrl()` |
 
 ---
