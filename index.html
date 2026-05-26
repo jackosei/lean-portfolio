@@ -144,12 +144,27 @@
       border-radius: 2px;
       color: var(--web-accent);
       text-decoration: none;
+      background: transparent;
+      cursor: pointer;
+      font-family: "JetBrains Mono", monospace;
       transition: all 0.2s;
     }
 
     .main-nav .btn:hover {
       background-color: var(--web-accent);
       color: var(--surface);
+    }
+
+    .main-nav .btn.btn-primary {
+      background: var(--text);
+      color: var(--bg);
+      border-color: var(--text);
+    }
+
+    .main-nav .btn.btn-primary:hover {
+      background: var(--text);
+      color: var(--bg);
+      opacity: 0.82;
     }
 
     .theme-toggle {
@@ -237,6 +252,121 @@
     .nav-pills a.ui:hover {
       color: var(--ui-accent);
       border-color: var(--ui-accent);
+    }
+
+    .nav-pills a.active {
+      color: var(--text);
+      border-color: var(--border-hover);
+    }
+
+    .nav-pills a.web.active {
+      color: var(--web-accent);
+      border-color: var(--web-accent);
+    }
+
+    .nav-pills a.wp.active {
+      color: var(--wp-accent);
+      border-color: var(--wp-accent);
+    }
+
+    .nav-pills a.ui.active {
+      color: var(--ui-accent);
+      border-color: var(--ui-accent);
+    }
+
+    /* ── STICKY NAV ── */
+    .sticky-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 40;
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 32px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      transform: translateY(-100%);
+      transition: transform 0.25s, background 0.3s, border-color 0.3s;
+    }
+
+    .sticky-nav.visible {
+      transform: translateY(0);
+    }
+
+    .sticky-nav a {
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      color: var(--muted);
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .sticky-nav a:hover { color: var(--text); border-color: var(--border-hover); }
+    .sticky-nav a.web.active { color: var(--web-accent); border-color: var(--web-accent); }
+    .sticky-nav a.wp.active  { color: var(--wp-accent);  border-color: var(--wp-accent); }
+    .sticky-nav a.ui.active  { color: var(--ui-accent);  border-color: var(--ui-accent); }
+
+    /* ── CONTACT MODAL ── */
+    .contact-options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .contact-option {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      background: var(--faint);
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+      font-family: "JetBrains Mono", monospace;
+      text-align: left;
+      width: 100%;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .contact-option:hover {
+      border-color: var(--border-hover);
+      background: var(--surface);
+    }
+
+    .contact-icon {
+      font-size: 18px;
+      width: 32px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .contact-label {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+
+    .contact-value {
+      font-size: 12px;
+      color: var(--text);
+    }
+
+    .contact-hint {
+      font-size: 10px;
+      color: var(--muted);
+      margin-left: auto;
+      flex-shrink: 0;
+      letter-spacing: 0.05em;
     }
 
     /* ── MAIN ── */
@@ -753,6 +883,13 @@
 </head>
 
 <body>
+  <!-- Sticky section nav (appears on scroll) -->
+  <nav class="sticky-nav" id="sticky-nav">
+    <a href="#web-apps" class="web" data-section="web-apps">Web Apps</a>
+    <a href="#wordpress" class="wp" data-section="wordpress">WordPress</a>
+    <a href="#ui-ux" class="ui" data-section="ui-ux">UI / UX</a>
+  </nav>
+
   <!-- Top bar: theme toggle + edit badge -->
   <div class="topbar">
     <span class="edit-badge" id="edit-badge">✦ Edit Mode</span>
@@ -762,7 +899,7 @@
     <nav class="main-nav">
       <p class="intro">// Hi, I'm Jack Osei</p>
       <div class="nav-buttons">
-        <a href="#contact" class="btn btn-primary">Hire me!</a>
+        <button class="btn btn-primary" onclick="openModal('contact-modal')">Hire me!</button>
         <button class="theme-toggle" id="theme-btn" title="Toggle light/dark" onclick="toggleTheme()">
           ☀
         </button>
@@ -861,6 +998,34 @@
       <div class="modal-actions">
         <button class="btn" onclick="closeModal('modal')">Cancel</button>
         <button class="btn btn-primary" onclick="saveProject()">Add →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact Modal -->
+  <div class="modal-overlay" id="contact-modal" onclick="handleOverlayClick(event, 'contact-modal')">
+    <div class="modal" style="max-width: 380px">
+      <h3 class="modal-title">Get in Touch</h3>
+      <div class="contact-options">
+        <button class="contact-option" onclick="copyEmail()">
+          <span class="contact-icon">✉</span>
+          <div>
+            <p class="contact-label">Email</p>
+            <p class="contact-value">jackoseik@gmail.com</p>
+          </div>
+          <span class="contact-hint" id="copy-hint">Click to copy</span>
+        </button>
+        <a class="contact-option" href="https://wa.me/233559109933" target="_blank" rel="noopener">
+          <span class="contact-icon">💬</span>
+          <div>
+            <p class="contact-label">WhatsApp</p>
+            <p class="contact-value">+233 55 910 9933</p>
+          </div>
+          <span class="contact-hint">Open →</span>
+        </a>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModal('contact-modal')">Close</button>
       </div>
     </div>
   </div>
@@ -1041,6 +1206,10 @@
         openPinModal();
         return;
       }
+      if (catOrId === "contact-modal") {
+        document.getElementById("contact-modal").classList.add("open");
+        return;
+      }
       activeCategory = catOrId;
       const titles = {
         web: "Add Web App Project",
@@ -1111,10 +1280,22 @@
       render();
     }
 
+    function copyEmail() {
+      navigator.clipboard.writeText("jackoseik@gmail.com").then(() => {
+        const hint = document.getElementById("copy-hint");
+        hint.textContent = "Copied!";
+        hint.style.color = "var(--web-accent)";
+        setTimeout(() => {
+          hint.textContent = "Click to copy";
+          hint.style.color = "";
+        }, 2000);
+      });
+    }
+
     /* ── KEYBOARD ── */
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
-        ["modal", "pin-modal"].forEach((id) => {
+        ["modal", "pin-modal", "contact-modal"].forEach((id) => {
           if (document.getElementById(id).classList.contains("open"))
             closeModal(id);
         });
@@ -1166,11 +1347,11 @@
               <rect x="2" y="3" width="20" height="14" rx="2"/>
               <line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
             </svg>
-            Loading preview…
+            <span id="ph-txt-${p.id}">Loading preview…</span>
           </div>
-          <img src="${thumbUrl(safeUrl(p.url))}" alt="${esc(p.name)} preview"
+          <img src="${thumbUrl(p.url)}" alt="${esc(p.name)} preview"
             onload="this.classList.add('loaded');var ph=document.getElementById('ph-${p.id}');if(ph)ph.style.display='none';"
-            onerror="this.style.display='none';"/>
+            onerror="this.style.display='none';var t=document.getElementById('ph-txt-${p.id}');if(t)t.textContent='No preview';"/>
         </div>
         <div class="card-body">
           <p class="card-name">${esc(p.name)}</p>
@@ -1242,12 +1423,39 @@
         }
       });
 
+    /* ── STICKY NAV + SECTION HIGHLIGHT ── */
+    function initNav() {
+      const stickyNav = document.getElementById("sticky-nav");
+      const stickyLinks = stickyNav.querySelectorAll("a");
+      const headerPills = document.querySelectorAll(".nav-pills a");
+      const sectionIds = ["web-apps", "wordpress", "ui-ux"];
+
+      function setActive(id) {
+        stickyLinks.forEach(a => a.classList.toggle("active", a.dataset.section === id));
+        headerPills.forEach(a => a.classList.toggle("active", a.getAttribute("href") === "#" + id));
+      }
+
+      new IntersectionObserver(([e]) => {
+        stickyNav.classList.toggle("visible", !e.isIntersecting);
+      }).observe(document.querySelector(".nav-pills"));
+
+      const sectionObs = new IntersectionObserver((entries) => {
+        entries.forEach(e => { if (e.isIntersecting) setActive(e.target.id); });
+      }, { rootMargin: "-30% 0px -60% 0px" });
+
+      sectionIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) sectionObs.observe(el);
+      });
+    }
+
     /* ── INIT ── */
     async function init() {
       loadTheme();
       await load();
       render();
       checkUrlFlag();
+      initNav();
     }
     init();
   </script>
