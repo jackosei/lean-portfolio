@@ -476,6 +476,7 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+      object-position: top;
       display: block;
       opacity: 0;
       transition: opacity 0.4s;
@@ -1313,10 +1314,13 @@
     });
 
     /* ── THUMBNAIL ── */
+    const SCREENSHOT_KEY = "xIhtktT82-Lufg";
     function thumbUrl(url) {
       return (
-        "https://image.thum.io/get/width/600/crop/380/noanimate/" +
-        encodeURIComponent(url)
+        "https://api.screenshotone.com/take?access_key=" + SCREENSHOT_KEY +
+        "&url=" + encodeURIComponent(url) +
+        "&viewport_width=1280&viewport_height=800&format=webp&image_quality=80" +
+        "&cache=true&full_page=false&block_ads=true"
       );
     }
     function cleanUrl(url) {
