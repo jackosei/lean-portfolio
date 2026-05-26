@@ -4,7 +4,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Jack K. Osei — Portfolio</title>
+  <title>Jack Osei | Portfolio</title>
+  <link rel="icon" href="/favicon.ico" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
@@ -899,37 +901,50 @@
 
   <script>
     // ─────────────────────────────────────────────────────────────────────────
+    // Supabase config — replace with your project values.
+    // Find these in: Supabase dashboard → Project Settings → API
+    // Supabase anon key — safe to expose in client code (designed for public use).
+    // Writes are allowed via RLS policies granted to the anon role.
+    const SUPABASE_URL = "https://kmyxjjfchpmftbypqalt.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtteXhqamZjaHBtZnRieXBxYWx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MTc1OTgsImV4cCI6MjA5NTM5MzU5OH0.fkOAbXRf8qev2SS9h5awX9p2jtcjwLLppC9rIcVhwYw";
+
     // SHA-256 hash of your 6-digit PIN. To change your PIN:
-    //   1. Run: echo -n "YOURPIN" | sha256sum   (Mac/Linux)
-    //      or use: https://emn178.github.io/online-tools/sha256.html
-    //   2. Paste the resulting hash string below.
-    // The real PIN never appears in this file.
+    //   echo -n "YOURPIN" | sha256sum   (Mac/Linux)
     const EDIT_PIN_HASH =
       "5c1188b3311353cf5cffe8d98046815f598034d6f9733b4b76007021a9a26bd1";
-    // ─────────────────────────────────────────────────────────────────────────
 
-    const STORAGE_KEY = "portfolio_v2";
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     let editMode = false;
     let pinBuffer = "";
 
     let data = {
-      bio: "A collection of projects spanning web development, WordPress builds, and interface design.",
+      bio: "",
       web: [],
       wp: [],
       ui: [],
     };
 
     /* ── PERSISTENCE ── */
-    function load() {
-      try {
-        const s = localStorage.getItem(STORAGE_KEY);
-        if (s) data = JSON.parse(s);
-      } catch (e) { }
+    async function load() {
+      const [{ data: projects }, { data: settings }] = await Promise.all([
+        db.from("projects").select("*").order("id"),
+        db.from("settings").select("*"),
+      ]);
+      if (projects) {
+        data.web = projects.filter((p) => p.category === "web").map(toProject);
+        data.wp  = projects.filter((p) => p.category === "wp").map(toProject);
+        data.ui  = projects.filter((p) => p.category === "ui").map(toProject);
+      }
+      if (settings) {
+        const bio = settings.find((s) => s.key === "bio");
+        if (bio) data.bio = bio.value;
+      }
     }
-    function save() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      } catch (e) { }
+
+    function toProject(row) {
+      return { id: row.id, name: row.name, url: row.url, desc: row.description };
     }
 
     /* ── THEME ── */
@@ -1022,11 +1037,7 @@
     let activeCategory = null;
 
     function openModal(catOrId) {
-      if (catOrId === "pin-modal-show") {
-        openPinModal();
-        return;
-      }
-      if (catOrId === "pin-modal") {
+      if (catOrId === "pin-modal-show" || catOrId === "pin-modal") {
         openPinModal();
         return;
       }
@@ -1051,7 +1062,6 @@
       document.getElementById(id).classList.remove("open");
       if (id === "modal") activeCategory = null;
       if (id === "pin-modal") {
-        // clean URL param without reload
         const url = new URL(window.location);
         url.searchParams.delete("edit");
         history.replaceState({}, "", url);
@@ -1062,7 +1072,7 @@
       if (e.target === document.getElementById(id)) closeModal(id);
     }
 
-    function saveProject() {
+    async function saveProject() {
       const name = document.getElementById("m-name").value.trim();
       const url = document.getElementById("m-url").value.trim();
       const desc = document.getElementById("m-desc").value.trim();
@@ -1073,15 +1083,31 @@
         ? "var(--ui-accent)"
         : "";
       if (!name || !url) return;
-      data[activeCategory].push({ name, url, desc, id: Date.now() });
-      save();
+
+      const saveBtn = document.querySelector('#modal .btn-primary');
+      saveBtn.textContent = "Saving…";
+      saveBtn.disabled = true;
+
+      const { data: row, error } = await db
+        .from("projects")
+        .insert({ category: activeCategory, name, url, description: desc })
+        .select()
+        .single();
+
+      saveBtn.textContent = "Add →";
+      saveBtn.disabled = false;
+
+      if (error) { alert("Failed to save: " + error.message); return; }
+
+      data[activeCategory].push(toProject(row));
       render();
       closeModal("modal");
     }
 
-    function deleteProject(cat, id) {
+    async function deleteProject(cat, id) {
+      const { error } = await db.from("projects").delete().eq("id", id);
+      if (error) { alert("Failed to delete: " + error.message); return; }
       data[cat] = data[cat].filter((p) => p.id !== id);
-      save();
       render();
     }
 
@@ -1099,7 +1125,6 @@
       ) {
         if (document.activeElement.tagName !== "TEXTAREA") saveProject();
       }
-      // PIN keypad: numeric keys
       if (document.getElementById("pin-modal").classList.contains("open")) {
         if (/^[0-9]$/.test(e.key)) pinKey(e.key);
         if (e.key === "Backspace") pinKey("back");
@@ -1121,7 +1146,6 @@
     function renderSection(cat) {
       const grid = document.getElementById(cat + "-grid");
       const projects = data[cat];
-      const empty = document.getElementById(cat + "-empty");
       const count = document.getElementById(cat + "-count");
 
       count.textContent =
@@ -1131,14 +1155,10 @@
             ? "1 project"
             : projects.length + " projects";
 
-      // show/hide empty state (only when not in edit mode)
-      empty.style.display =
-        !editMode && projects.length === 0 ? "block" : "none";
-
       const cards = projects
         .map(
           (p) => `
-      <a class="card" href="${esc(p.url)}" target="_blank" rel="noopener">
+      <a class="card" href="${safeUrl(p.url)}" target="_blank" rel="noopener">
         ${editMode ? `<button class="card-delete" onclick="event.preventDefault();deleteProject('${cat}',${p.id})" title="Remove">✕</button>` : ""}
         <div class="card-thumb">
           <div class="thumb-placeholder" id="ph-${p.id}">
@@ -1148,7 +1168,7 @@
             </svg>
             Loading preview…
           </div>
-          <img src="${thumbUrl(p.url)}" alt="${esc(p.name)} preview"
+          <img src="${thumbUrl(safeUrl(p.url))}" alt="${esc(p.name)} preview"
             onload="this.classList.add('loaded');var ph=document.getElementById('ph-${p.id}');if(ph)ph.style.display='none';"
             onerror="this.style.display='none';"/>
         </div>
@@ -1183,6 +1203,10 @@
       document.getElementById("bio-text").textContent = data.bio;
     }
 
+    function safeUrl(url) {
+      return /^https?:\/\//i.test(String(url)) ? esc(url) : "#";
+    }
+
     function esc(s) {
       return String(s)
         .replace(/&/g, "&amp;")
@@ -1194,12 +1218,15 @@
     /* ── BIO EDIT (edit mode only) ── */
     document
       .getElementById("bio-text")
-      .addEventListener("click", function () {
+      .addEventListener("click", async function () {
         if (!editMode) return;
         const b = prompt("Edit bio:", data.bio);
         if (b !== null && b.trim()) {
+          const { error } = await db
+            .from("settings")
+            .upsert({ key: "bio", value: b.trim() });
+          if (error) { alert("Failed to save bio: " + error.message); return; }
           data.bio = b.trim();
-          save();
           render();
         }
       });
@@ -1216,10 +1243,13 @@
       });
 
     /* ── INIT ── */
-    load();
-    loadTheme();
-    render();
-    checkUrlFlag();
+    async function init() {
+      loadTheme();
+      await load();
+      render();
+      checkUrlFlag();
+    }
+    init();
   </script>
 </body>
 
